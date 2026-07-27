@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Calendar, Filter, MapPin, Repeat, SlidersHorizontal, Timer, TrendingUp, Trophy } from "lucide-react"
+import { Calendar, ListFilter as Filter, MapPin, Repeat, SlidersHorizontal, Timer, TrendingUp, Trophy } from "lucide-react"
 import {
   Area,
   AreaChart,
@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { matchInfo, players } from "@/lib/mock-data"
+import { players } from "@/lib/mock-data"
 import {
   type MatchDataset,
   type ShotOutcome,
@@ -447,9 +447,6 @@ function FilterBar({
   count: number
   total: number
 }) {
-  const pillClass =
-    "rounded-md border border-transparent bg-secondary/60 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-
   return (
     <div className="sticky top-0 z-20 -mx-4 mb-2 border-b border-border bg-background/85 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
@@ -639,6 +636,3 @@ export function MatchView() {
     </div>
   )
 }
-
-
-export { MatchView }

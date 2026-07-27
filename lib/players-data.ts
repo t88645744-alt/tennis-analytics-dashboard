@@ -232,9 +232,9 @@ export function getH2H(aId: string, bId: string) {
   const aWins = Math.round((total * (35 + (seed % 30))) / 100)
   const bWins = total - aWins
   const surfaces: { surface: Surface; a: number; b: number }[] = [
-    { surface: "Hard", a: Math.round(aWins * 0.5), b: Math.round(bWins * 0.55) },
-    { surface: "Clay", a: Math.round(aWins * 0.3), b: Math.round(bWins * 0.3) },
-    { surface: "Grass", a: aWins, b: bWins },
+    { surface: "Hard" as const, a: Math.round(aWins * 0.5), b: Math.round(bWins * 0.55) },
+    { surface: "Clay" as const, a: Math.round(aWins * 0.3), b: Math.round(bWins * 0.3) },
+    { surface: "Grass" as const, a: aWins, b: bWins },
   ].map((s, i) => {
     if (i === 2) {
       // Grass = үлдэгдэл
