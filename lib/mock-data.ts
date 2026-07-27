@@ -132,3 +132,123 @@ export const serveSpeed = [
   { bucket: "200-210", a: 13, b: 15 },
   { bucket: "210+", a: 5, b: 9 },
 ]
+
+// --- AI Match Winner Prediction ---
+export type PredictionFactor = {
+  label: string
+  detail: string
+  impact: number // 0-100 — AI-н бодож буй нөлөөллийн хүч
+}
+
+export type ScorePrediction = {
+  score: string // "2-1", "3-0" г.м
+  probability: number // 0-100 — энэ харьцаагаар төгсөх магадлал
+}
+
+export type MatchPrediction = {
+  winProbability: { a: number; b: number } // нийт 100
+  confidence: number // AI-н итгэлцүүр (0-100)
+  factors: PredictionFactor[]
+  scorePredictions: ScorePrediction[]
+  predictedScore: string
+}
+
+export const matchPrediction: MatchPrediction = {
+  winProbability: { a: 58, b: 42 },
+  confidence: 73,
+  factors: [
+    {
+      label: "Дээд хэмжээний сервис",
+      detail:
+        "Сүүлийн 10 тоглолтод 68% нэгдүгээр сервис, 9.1 ace/тоглолт — өрсөлдөгчийн буцаалтын алдааг өдөөнө.",
+      impact: 82,
+    },
+    {
+      label: "Шавар гадаргуугийн тохироо",
+      detail:
+        "Шавар дээр 24-3 гэх амжилттай. Урт rally-д физик хүчин зүйл давамгайлна.",
+      impact: 71,
+    },
+    {
+      label: "Сүүлийн форм",
+      detail:
+        "Сүүлийн 5 тоглолтод 4 хожил, гэхдээ сүүлийн 2 тоглолтод break point авалт 41% буурсан.",
+      impact: 64,
+    },
+  ],
+  scorePredictions: [
+    { score: "3-1", probability: 28 },
+    { score: "3-0", probability: 22 },
+    { score: "3-2", probability: 18 },
+    { score: "1-3", probability: 17 },
+    { score: "0-3", probability: 15 },
+  ],
+  predictedScore: "3-1",
+}
+
+// --- Live Player Momentum & Form Status ---
+export type FormStatus = "fire" | "dropping" | "stable"
+
+export type PlayerForm = {
+  player: "a" | "b"
+  status: FormStatus
+  streak: number // дараалал (эерэг = хожлын, сөрөг = алдааны)
+  recentPoints: number[] // сүүлийн N оноо (1 = хожсон, 0 = алдсан)
+  breakPointsFaced: number
+  breakPointsSaved: number
+  unforcedErrorsTrend: number // сүүлийн сэтүүдийн өсөлт (+) / бууралт (-)
+}
+
+export type SetMomentumPoint = {
+  set: string
+  a: number // тухайн сетэд A-н momentum (-100..100)
+  b: number // B-н momentum
+}
+
+export type BreakPointAlarm = {
+  active: boolean
+  player: "a" | "b" | null
+  message: string
+  severity: "high" | "medium" | "low"
+}
+
+export type LiveMomentumData = {
+  players: PlayerForm[]
+  setMomentum: SetMomentumPoint[]
+  breakPointAlarm: BreakPointAlarm
+}
+
+export const liveMomentum: LiveMomentumData = {
+  players: [
+    {
+      player: "a",
+      status: "fire",
+      streak: 4,
+      recentPoints: [1, 1, 1, 0, 1, 1, 1, 1],
+      breakPointsFaced: 3,
+      breakPointsSaved: 2,
+      unforcedErrorsTrend: -2,
+    },
+    {
+      player: "b",
+      status: "dropping",
+      streak: -3,
+      recentPoints: [0, 0, 1, 0, 0, 1, 0, 0],
+      breakPointsFaced: 5,
+      breakPointsSaved: 2,
+      unforcedErrorsTrend: 5,
+    },
+  ],
+  setMomentum: [
+    { set: "Сэт 1", a: 35, b: -35 },
+    { set: "Сэт 2", a: -20, b: 20 },
+    { set: "Сэт 3", a: 55, b: -55 },
+    { set: "Сэт 4", a: 40, b: -40 },
+  ],
+  breakPointAlarm: {
+    active: true,
+    player: "b",
+    message: "B тоглогч 3 break point тарж байна — сэтгэл зүйн дарамт өндөр.",
+    severity: "high",
+  },
+}

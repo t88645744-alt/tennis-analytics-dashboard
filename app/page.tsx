@@ -5,6 +5,8 @@ import { ServeChart } from "@/components/dashboard/serve-chart"
 import { ShotDirectionChart } from "@/components/dashboard/shot-direction-chart"
 import { MomentumChart } from "@/components/dashboard/momentum-chart"
 import { RallyChart } from "@/components/dashboard/rally-chart"
+import { PredictionWidget } from "@/components/dashboard/prediction-widget"
+import { LiveMomentumWidget } from "@/components/dashboard/live-momentum-widget"
 
 export default function DashboardPage() {
   return (
@@ -24,6 +26,11 @@ export default function DashboardPage() {
         <MatchHero />
 
         <KeyStats />
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <PredictionWidget />
+          <LiveMomentumWidget />
+        </div>
 
         <MomentumChart />
 
