@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ListFilter as Filter, MapPin, Repeat, Timer, TrendingUp, Trophy } from "lucide-react"
+import { Calendar, Filter, MapPin, Repeat, SlidersHorizontal, Timer, TrendingUp, Trophy } from "lucide-react"
 import {
   Area,
   AreaChart,
@@ -14,24 +14,21 @@ import {
 } from "recharts"
 import { matchInfo, players } from "@/lib/mock-data"
 import {
-  type Shot,
+  type MatchDataset,
   type ShotOutcome,
-  matchMomentum,
-  rallyWinDist,
-  setBreaks,
-  shots,
+  type Surface,
+  type TournamentType,
+  filterMatches,
+  matches,
+  surfaceOptions,
+  tournamentTypeOptions,
+  yearOptions,
 } from "@/lib/match-data"
 import { ChartCard } from "@/components/dashboard/chart-card"
 import { TennisCourt } from "@/components/match/tennis-court"
 
 type PlayerFilter = "a" | "b" | "both"
 type OutcomeFilter = "all" | ShotOutcome
-
-const OUTCOME_META: Record<ShotOutcome, { label: string; color: string }> = {
-  winner: { label: "Winner", color: "var(--chart-1)" },
-  error: { label: "Алдаа", color: "var(--destructive)" },
-  in: { label: "Тоглоомд", color: "var(--muted-foreground)" },
-}
 
 function MomentumTooltip({
   active,
@@ -60,18 +57,18 @@ function MomentumTooltip({
   )
 }
 
-function CourtPanel() {
+function CourtPanel({ match }: { match: MatchDataset }) {
   const [mode, setMode] = useState<"shots" | "heatmap">("shots")
   const [playerFilter, setPlayerFilter] = useState<PlayerFilter>("both")
   const [outcomeFilter, setOutcomeFilter] = useState<OutcomeFilter>("all")
 
   const filteredShots = useMemo(() => {
-    return shots.filter((s) => {
+    return match.shots.filter((s) => {
       if (playerFilter !== "both" && s.player !== playerFilter) return false
       if (outcomeFilter !== "all" && s.outcome !== outcomeFilter) return false
       return true
     })
-  }, [playerFilter, outcomeFilter])
+  }, [match.shots, playerFilter, outcomeFilter])
 
   return (
     <ChartCard
@@ -79,7 +76,6 @@ function CourtPanel() {
       description="Бөмбөг хаашаа унасныг харуулах Shot Map / Heatmap."
       icon={MapPin}
     >
-      {/* Горимын сонголт */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-lg border border-border bg-secondary/50 p-0.5">
           {(["shots", "heatmap"] as const).map((m) => (
@@ -99,7 +95,6 @@ function CourtPanel() {
         </div>
       </div>
 
-      {/* Талбай */}
       <div className="mx-auto aspect-[240/460] w-full max-w-[280px]">
         <TennisCourt
           shots={filteredShots}
@@ -109,14 +104,12 @@ function CourtPanel() {
         />
       </div>
 
-      {/* Шүүлтүүр */}
       <div className="mt-4 space-y-3">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Filter className="size-3.5" aria-hidden="true" />
           <span>Шүүлтүүр</span>
         </div>
 
-        {/* Тоглогчийн шүүлтүүр */}
         <div className="flex flex-wrap gap-1.5">
           {([
             { id: "both", label: "Хоёулаа" },
@@ -138,7 +131,6 @@ function CourtPanel() {
           ))}
         </div>
 
-        {/* Үр дүнгийн шүүлтүүр */}
         <div className="flex flex-wrap gap-1.5">
           {([
             { id: "all", label: "Бүгд" },
@@ -172,8 +164,9 @@ function CourtPanel() {
   )
 }
 
-function RallyChart() {
-  const maxPoints = Math.max(...rallyWinDist.flatMap((r) => [r.aPoints, r.bPoints])) || 1
+function RallyChart({ match }: { match: MatchDataset }) {
+  const maxPoints =
+    Math.max(...match.rallyWinDist.flatMap((r) => [r.aPoints, r.bPoints])) || 1
 
   return (
     <ChartCard
@@ -182,7 +175,7 @@ function RallyChart() {
       icon={Repeat}
     >
       <div className="flex flex-col gap-4">
-        {rallyWinDist.map((bucket) => {
+        {match.rallyWinDist.map((bucket) => {
           const aLead = bucket.a > bucket.b
           const bLead = bucket.b > bucket.a
           return (
@@ -192,7 +185,6 @@ function RallyChart() {
                 <span className="text-xs text-muted-foreground">{bucket.label}</span>
               </div>
 
-              {/* Хожлын хувь */}
               <div className="mb-2 flex items-center justify-between text-xs">
                 <span
                   className={`font-mono tabular-nums ${aLead ? "font-bold" : "text-muted-foreground"}`}
@@ -209,7 +201,6 @@ function RallyChart() {
                 </span>
               </div>
 
-              {/* Хожлын хувийн тууз */}
               <div className="mb-3 flex h-2 overflow-hidden rounded-full bg-secondary">
                 <div
                   className="h-full"
@@ -223,7 +214,6 @@ function RallyChart() {
                 />
               </div>
 
-              {/* Онооны дүн */}
               <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <div className="flex h-2.5 justify-end overflow-hidden rounded-full bg-secondary">
@@ -262,14 +252,11 @@ function RallyChart() {
           )
         })}
       </div>
-      <p className="mt-3 text-center text-xs text-muted-foreground text-pretty">
-        {players.b.name} урт rally-д (9+) илүү давуутай байна
-      </p>
     </ChartCard>
   )
 }
 
-function MomentumChart() {
+function MomentumChart({ match }: { match: MatchDataset }) {
   return (
     <ChartCard
       title="Тоглолтын динамик (Momentum)"
@@ -279,7 +266,10 @@ function MomentumChart() {
     >
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={matchMomentum} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+          <AreaChart
+            data={match.matchMomentum}
+            margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
+          >
             <defs>
               <linearGradient id="matchMomA" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.5} />
@@ -305,13 +295,8 @@ function MomentumChart() {
             />
             <Tooltip content={<MomentumTooltip />} />
             <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeOpacity={0.5} />
-            {setBreaks.map((g) => (
-              <ReferenceLine
-                key={g}
-                x={g}
-                stroke="var(--border)"
-                strokeDasharray="4 4"
-              />
+            {match.setBreaks.map((g) => (
+              <ReferenceLine key={g} x={g} stroke="var(--border)" strokeDasharray="4 4" />
             ))}
             <Area
               type="monotone"
@@ -338,115 +323,322 @@ function MomentumChart() {
   )
 }
 
-export function MatchView() {
+function MatchSummary({ match }: { match: MatchDataset }) {
   return (
-    <div className="flex flex-col gap-6">
-      {/* Тоглолтын тойм баннер */}
-      <section
-        className="rounded-2xl border border-border bg-card p-5 sm:p-6"
-        aria-label="Тоглолтын тойм"
-      >
-        <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-          <span className="rounded-full bg-accent/15 px-2.5 py-1 font-medium text-accent">
-            {matchInfo.tournament} · {matchInfo.round}
-          </span>
-          <span className="flex items-center gap-1">
-            <MapPin className="size-3.5" aria-hidden="true" />
-            {matchInfo.court} · {matchInfo.surface}
-          </span>
-          <span className="flex items-center gap-1">
-            <Timer className="size-3.5" aria-hidden="true" />
-            {matchInfo.duration}
-          </span>
+    <section
+      className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+      aria-label="Тоглолтын тойм"
+    >
+      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        <span className="rounded-full bg-accent/15 px-2.5 py-1 font-medium text-accent">
+          {match.tournament} · {match.round}
+        </span>
+        <span className="flex items-center gap-1">
+          <MapPin className="size-3.5" aria-hidden="true" />
+          {match.court} · {match.surface}
+        </span>
+        <span className="flex items-center gap-1">
+          <Timer className="size-3.5" aria-hidden="true" />
+          {match.duration}
+        </span>
+        <span className="flex items-center gap-1">
+          <Calendar className="size-3.5" aria-hidden="true" />
+          {match.date}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-[1fr_auto_1fr]">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex size-12 shrink-0 items-center justify-center rounded-full text-xl ring-2"
+            style={{
+              backgroundColor: `color-mix(in oklch, ${players.a.color} 18%, transparent)`,
+              color: players.a.color,
+              ["--tw-ring-color" as string]: players.a.color,
+            }}
+            aria-hidden="true"
+          >
+            {players.a.countryFlag}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold tracking-tight">{players.a.name}</h2>
+              {match.winner === "a" && (
+                <Trophy className="size-4 text-accent" aria-label="Ялагч" />
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              #{players.a.rank} · {players.a.country}
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-[1fr_auto_1fr]">
-          <div className="flex items-center gap-3">
-            <div
-              className="flex size-12 shrink-0 items-center justify-center rounded-full text-xl ring-2"
-              style={{
-                backgroundColor: `color-mix(in oklch, ${players.a.color} 18%, transparent)`,
-                color: players.a.color,
-                ["--tw-ring-color" as string]: players.a.color,
-              }}
-              aria-hidden="true"
-            >
-              {players.a.countryFlag}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold tracking-tight">{players.a.name}</h2>
-                {matchInfo.winner === "a" && (
-                  <Trophy className="size-4 text-accent" aria-label="Ялагч" />
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                #{players.a.rank} · {players.a.country}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-            {matchInfo.scoreline.map((s) => {
-              const aWon = s.a > s.b
-              return (
-                <div
-                  key={s.set}
-                  className="flex flex-col items-center gap-1 rounded-lg border border-border bg-secondary/50 px-2.5 py-2 sm:px-3"
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+          {match.scoreline.map((s) => {
+            const aWon = s.a > s.b
+            return (
+              <div
+                key={s.set}
+                className="flex flex-col items-center gap-1 rounded-lg border border-border bg-secondary/50 px-2.5 py-2 sm:px-3"
+              >
+                <span
+                  className={`font-mono text-lg font-bold leading-none ${
+                    aWon ? "text-primary" : "text-muted-foreground"
+                  }`}
                 >
-                  <span
-                    className={`font-mono text-lg font-bold leading-none ${
-                      aWon ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {s.a}
-                  </span>
-                  <span className="h-px w-4 bg-border" aria-hidden="true" />
-                  <span
-                    className={`font-mono text-lg font-bold leading-none ${
-                      !aWon ? "text-accent" : "text-muted-foreground"
-                    }`}
-                  >
-                    {s.b}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="flex items-center gap-3 md:flex-row-reverse md:text-right">
-            <div
-              className="flex size-12 shrink-0 items-center justify-center rounded-full text-xl ring-2"
-              style={{
-                backgroundColor: `color-mix(in oklch, ${players.b.color} 18%, transparent)`,
-                color: players.b.color,
-                ["--tw-ring-color" as string]: players.b.color,
-              }}
-              aria-hidden="true"
-            >
-              {players.b.countryFlag}
-            </div>
-            <div>
-              <div className="flex items-center gap-2 md:flex-row-reverse">
-                <h2 className="text-lg font-semibold tracking-tight">{players.b.name}</h2>
-                {matchInfo.winner === "b" && (
-                  <Trophy className="size-4 text-accent" aria-label="Ялагч" />
-                )}
+                  {s.a}
+                </span>
+                <span className="h-px w-4 bg-border" aria-hidden="true" />
+                <span
+                  className={`font-mono text-lg font-bold leading-none ${
+                    !aWon ? "text-accent" : "text-muted-foreground"
+                  }`}
+                >
+                  {s.b}
+                </span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                #{players.b.rank} · {players.b.country}
-              </p>
+            )
+          })}
+        </div>
+
+        <div className="flex items-center gap-3 md:flex-row-reverse md:text-right">
+          <div
+            className="flex size-12 shrink-0 items-center justify-center rounded-full text-xl ring-2"
+            style={{
+              backgroundColor: `color-mix(in oklch, ${players.b.color} 18%, transparent)`,
+              color: players.b.color,
+              ["--tw-ring-color" as string]: players.b.color,
+            }}
+            aria-hidden="true"
+          >
+            {players.b.countryFlag}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 md:flex-row-reverse">
+              <h2 className="text-lg font-semibold tracking-tight">{players.b.name}</h2>
+              {match.winner === "b" && (
+                <Trophy className="size-4 text-accent" aria-label="Ялагч" />
+              )}
             </div>
+            <p className="text-sm text-muted-foreground">
+              #{players.b.rank} · {players.b.country}
+            </p>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  )
+}
 
-      {/* Гол агуулга */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <CourtPanel />
-        <RallyChart />
-        <MomentumChart />
+type FilterState = {
+  year: number | "all"
+  tournamentType: TournamentType | "all"
+  surface: Surface | "all"
+}
+
+function FilterBar({
+  filters,
+  onChange,
+  count,
+  total,
+}: {
+  filters: FilterState
+  onChange: (next: FilterState) => void
+  count: number
+  total: number
+}) {
+  const pillClass =
+    "rounded-md border border-transparent bg-secondary/60 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+
+  return (
+    <div className="sticky top-0 z-20 -mx-4 mb-2 border-b border-border bg-background/85 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <SlidersHorizontal className="size-4" aria-hidden="true" />
+          Шүүлтүүр
+        </div>
+
+        {/* Жил */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Жил:</span>
+          <div className="inline-flex rounded-lg border border-border bg-secondary/40 p-0.5">
+            <button
+              type="button"
+              onClick={() => onChange({ ...filters, year: "all" })}
+              className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                filters.year === "all"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Бүгд
+            </button>
+            {yearOptions.map((y) => (
+              <button
+                key={y}
+                type="button"
+                onClick={() => onChange({ ...filters, year: y })}
+                className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                  filters.year === y
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Тэмцээний төрөл */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Төрөл:</span>
+          <div className="inline-flex rounded-lg border border-border bg-secondary/40 p-0.5">
+            <button
+              type="button"
+              onClick={() => onChange({ ...filters, tournamentType: "all" })}
+              className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                filters.tournamentType === "all"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Бүгд
+            </button>
+            {tournamentTypeOptions.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => onChange({ ...filters, tournamentType: t })}
+                className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                  filters.tournamentType === t
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Гадаргуу */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Гадаргуу:</span>
+          <div className="inline-flex rounded-lg border border-border bg-secondary/40 p-0.5">
+            <button
+              type="button"
+              onClick={() => onChange({ ...filters, surface: "all" })}
+              className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                filters.surface === "all"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Бүгд
+            </button>
+            {surfaceOptions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => onChange({ ...filters, surface: s })}
+                className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                  filters.surface === s
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <span className="ml-auto text-xs text-muted-foreground">
+          {count}/{total} тоглолт
+        </span>
       </div>
     </div>
   )
 }
+
+export function MatchView() {
+  const [filters, setFilters] = useState<FilterState>({
+    year: "all",
+    tournamentType: "all",
+    surface: "all",
+  })
+  const [selectedId, setSelectedId] = useState<string>(matches[0].id)
+
+  const filtered = useMemo(
+    () =>
+      filterMatches({
+        year: filters.year,
+        tournamentType: filters.tournamentType,
+        surface: filters.surface,
+      }),
+    [filters],
+  )
+
+  const selectedMatch = useMemo(() => {
+    const found = filtered.find((m) => m.id === selectedId)
+    return found ?? filtered[0] ?? null
+  }, [filtered, selectedId])
+
+  return (
+    <div className="flex flex-col gap-6">
+      <FilterBar
+        filters={filters}
+        onChange={setFilters}
+        count={filtered.length}
+        total={matches.length}
+      />
+
+      {/* Тоглолт сонгогч */}
+      {filtered.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {filtered.map((m) => {
+            const active = m.id === selectedMatch?.id
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setSelectedId(m.id)}
+                className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                  active
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <div className="font-medium">{m.tournament}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {m.year} · {m.surface} · {m.round}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {selectedMatch ? (
+        <>
+          <MatchSummary match={selectedMatch} />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <CourtPanel match={selectedMatch} />
+            <RallyChart match={selectedMatch} />
+            <MomentumChart match={selectedMatch} />
+          </div>
+        </>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            Сонгосон шүүлтүүрт тохирох тоглолт олдсонгүй. Өөр шүүлтүүр сонгоно уу.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+export { MatchView }

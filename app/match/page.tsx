@@ -12,7 +12,8 @@ export default function MatchPage() {
             Тоглолтын гүнзгий шинжилгээ
           </h1>
           <p className="text-sm text-muted-foreground text-pretty">
-            Талбайн дээрх цохилтууд, rally уртаар хожсон оноо ба тоглолтын явцын динамик — нэг дэлгэцэнд.
+            Талбайн дээрх цохилтууд, rally уртаар хожсон оноо ба тоглолтын явцын динамик —
+            жил, тэмцээний төрөл, кортны гадаргуугаар шүүж харах боломжтой.
           </p>
         </div>
 
@@ -20,7 +21,8 @@ export default function MatchPage() {
 
         <footer className="border-t border-border pt-6 text-center text-xs text-muted-foreground">
           <p className="text-pretty">
-            AceMetrics · Демо дата дээр суурилсан туршилтын хувилбар. Дараагийн шатанд real-time API-тай холбогдоно.
+            AceMetrics · Демо дата дээр суурилсан туршилтын хувилбар. Дараагийн шатанд
+            real-time API-тай холбогдоно.
           </p>
         </footer>
       </main>
