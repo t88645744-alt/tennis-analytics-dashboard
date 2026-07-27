@@ -7,7 +7,7 @@ import { Activity, CircleDot, Search } from "lucide-react"
 const NAV = [
   { label: "Тойм", href: "/" },
   { label: "Тоглогчид", href: "/" },
-  { label: "Тоглолтууд", href: "/" },
+  { label: "Тоглолтууд", href: "/match" },
   { label: "H2H", href: "/h2h" },
   { label: "Тайлан", href: "/" },
 ]
@@ -30,7 +30,12 @@ export function DashboardHeader() {
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Үндсэн цэс">
           {NAV.map((item) => {
-            const active = item.href === "/h2h" ? pathname === "/h2h" : pathname === item.href && item.label === "Тойм"
+            const active =
+              item.href === "/h2h"
+                ? pathname === "/h2h"
+                : item.href === "/match"
+                  ? pathname === "/match"
+                  : pathname === item.href && item.label === "Тойм"
             return (
               <Link
                 key={item.label}
