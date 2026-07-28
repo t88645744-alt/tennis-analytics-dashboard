@@ -6,7 +6,7 @@ import { Activity, CircleDot, Search } from "lucide-react"
 
 const NAV = [
   { label: "Тойм", href: "/" },
-  { label: "Тоглогчид", href: "/" },
+  { label: "Тоглогчид", href: "/players" },
   { label: "Тоглолтууд", href: "/match" },
   { label: "H2H", href: "/h2h" },
   { label: "Тайлан", href: "/" },

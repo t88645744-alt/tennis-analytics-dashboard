@@ -7,6 +7,7 @@ import { MomentumChart } from "@/components/dashboard/momentum-chart"
 import { RallyChart } from "@/components/dashboard/rally-chart"
 import { PredictionWidget } from "@/components/dashboard/prediction-widget"
 import { LiveMomentumWidget } from "@/components/dashboard/live-momentum-widget"
+import { LiveMatchesWidget } from "@/components/dashboard/live-matches-widget"
 
 export default function DashboardPage() {
   return (
@@ -31,6 +32,8 @@ export default function DashboardPage() {
           <PredictionWidget />
           <LiveMomentumWidget />
         </div>
+
+        <LiveMatchesWidget />
 
         <MomentumChart />
 
